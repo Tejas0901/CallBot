@@ -20,9 +20,9 @@ export default function AuthLayout({
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-xl">W</span>
+              <span className="text-white font-bold text-xl">C</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">WeCraft</span>
+            <span className="text-2xl font-bold text-gray-900">CallBot</span>
           </div>
 
           {/* Hero content */}
@@ -57,7 +57,7 @@ export default function AuthLayout({
           {/* Testimonial / social proof */}
           <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-orange-100">
             <p className="text-gray-600 text-sm leading-relaxed italic">
-              &ldquo;WeCraft cut our screening time by 70% and helped us reach 3x more candidates. It&rsquo;s a game-changer for our recruiting team.&rdquo;
+              &ldquo;CallBot cut our screening time by 70% and helped us reach 3x more candidates. It&rsquo;s a game-changer for our recruiting team.&rdquo;
             </p>
             <div className="mt-4 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">

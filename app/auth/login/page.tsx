@@ -49,9 +49,9 @@ export default function LoginPage() {
       {/* Mobile logo */}
       <div className="flex items-center gap-3 mb-8 lg:hidden">
         <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">W</span>
+          <span className="text-white font-bold text-lg">C</span>
         </div>
-        <span className="text-xl font-bold text-gray-900">WeCraft</span>
+        <span className="text-xl font-bold text-gray-900">CallBot</span>
       </div>
 
       {/* Header */}
