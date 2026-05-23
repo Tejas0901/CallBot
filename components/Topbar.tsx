@@ -11,7 +11,17 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [searchText, setSearchText] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  const displayName = user?.username || user?.email?.split("@")[0] || "";
+  const initials = (() => {
+    if (!displayName) return "?";
+    const parts = displayName.trim().split(/[\s._-]+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return displayName.slice(0, 2).toUpperCase();
+  })();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -78,11 +88,23 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             <button
               className="w-9 h-9 bg-linear-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => setDropdownOpen(!dropdownOpen)}
+              aria-label={displayName ? `Account menu for ${displayName}` : "Account menu"}
+              title={displayName || "Account"}
             >
-              <span className="text-white text-sm font-semibold">JD</span>
+              <span className="text-white text-sm font-semibold">{initials}</span>
             </button>
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                {user && (
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {displayName}
+                    </p>
+                    {user.email && (
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    )}
+                  </div>
+                )}
                 <a
                   href="/profile"
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
