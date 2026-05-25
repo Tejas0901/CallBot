@@ -172,8 +172,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const refreshToken = tokenStorage.getRefreshToken();
         const savedUser = tokenStorage.getUser();
 
-        // No session at all — if we're on a protected page, bounce to login.
+        // No session at all — make sure any stale cookie is gone so the
+        // middleware doesn't bounce us back, then redirect to login if needed.
         if (!accessToken && !refreshToken) {
+          clearAuthCookies();
           if (!isPublicPath(pathname)) redirectToLogin();
           return;
         }

@@ -75,12 +75,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useLoading } from "@/context/loading-context";
 
 export default function CampaignDetailPage() {
   const params = useParams();
   const router = useRouter();
   const campaignId = params.id as string;
 
+  const { showLoading, hideLoading } = useLoading();
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
@@ -232,6 +234,7 @@ export default function CampaignDetailPage() {
       }
 
       // Try API with auth token
+      showLoading("Loading campaign");
       try {
         setLoading(true);
         const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -315,11 +318,12 @@ export default function CampaignDetailPage() {
         setCampaign(null);
       } finally {
         setLoading(false);
+        hideLoading();
       }
     };
 
     fetchCampaign();
-  }, [campaignId, authToken]);
+  }, [campaignId, authToken, showLoading, hideLoading]);
 
   // Fetch analytics data
   useEffect(() => {
@@ -1329,6 +1333,7 @@ export default function CampaignDetailPage() {
     }
 
     setDeleteLoading(true);
+    showLoading("Deleting campaign");
     try {
       const response = await fetch(
         `${API_BASE_URL.replace(/\/$/, "")}/api/v1/campaigns/${campaignId}`,
@@ -1372,6 +1377,7 @@ export default function CampaignDetailPage() {
       });
     } finally {
       setDeleteLoading(false);
+      hideLoading();
     }
   };
 
@@ -1398,6 +1404,7 @@ export default function CampaignDetailPage() {
     }
 
     setDeactivateLoading(true);
+    showLoading("Deactivating campaign");
     try {
       const response = await fetch(
         `${API_BASE_URL.replace(
@@ -1446,6 +1453,7 @@ export default function CampaignDetailPage() {
       });
     } finally {
       setDeactivateLoading(false);
+      hideLoading();
     }
   };
 
@@ -1472,6 +1480,7 @@ export default function CampaignDetailPage() {
     }
 
     setActivateLoading(true);
+    showLoading("Activating campaign");
     try {
       const response = await fetch(
         `${API_BASE_URL.replace(
@@ -1520,6 +1529,7 @@ export default function CampaignDetailPage() {
       });
     } finally {
       setActivateLoading(false);
+      hideLoading();
     }
   };
 
@@ -1547,6 +1557,7 @@ export default function CampaignDetailPage() {
     if (!contactToDelete || !authToken) return;
 
     setDeletingContact(true);
+    showLoading("Deleting contact");
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -1605,6 +1616,7 @@ export default function CampaignDetailPage() {
       });
     } finally {
       setDeletingContact(false);
+      hideLoading();
     }
   };
 
@@ -1612,6 +1624,7 @@ export default function CampaignDetailPage() {
     if (!selectedContact || !authToken) return;
 
     setEditingContact(true);
+    showLoading("Updating contact");
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -1681,6 +1694,7 @@ export default function CampaignDetailPage() {
       });
     } finally {
       setEditingContact(false);
+      hideLoading();
     }
   };
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import MainLayout from '@/components/layouts/MainLayout';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/context/auth-context';
+import { useLoading } from '@/context/loading-context';
 import authService from '@/lib/authService';
 import { useApiCall } from '@/hooks/useApiCall';
 
@@ -19,6 +20,7 @@ interface UserProfile {
 export default function Profile() {
   const { user, getAccessToken } = useAuth();
   const { call, loading: apiLoading, error } = useApiCall();
+  const { showLoading, hideLoading } = useLoading();
   
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
@@ -34,25 +36,30 @@ export default function Profile() {
       const token = getAccessToken();
       if (!token) return;
 
-      await call(
-        () => authService.getMe(token),
-        {
-          onSuccess: (data) => {
-            setProfile(data);
-            setFormData({
-              username: data.username || '',
-              email: data.email || '',
-            });
-          },
-          onError: (message) => {
-            console.error('Failed to load profile:', message);
-          },
-        }
-      );
+      showLoading('Loading profile');
+      try {
+        await call(
+          () => authService.getMe(token),
+          {
+            onSuccess: (data) => {
+              setProfile(data);
+              setFormData({
+                username: data.username || '',
+                email: data.email || '',
+              });
+            },
+            onError: (message) => {
+              console.error('Failed to load profile:', message);
+            },
+          }
+        );
+      } finally {
+        hideLoading();
+      }
     };
 
     loadProfile();
-  }, [getAccessToken, call]);
+  }, [getAccessToken, call, showLoading, hideLoading]);
 
   // Handle form submission
   const handleSaveChanges = async (e: React.FormEvent) => {
@@ -61,23 +68,30 @@ export default function Profile() {
     setSaveSuccess(false);
 
     const token = getAccessToken();
-    if (!token) return;
+    if (!token) {
+      setIsSaving(false);
+      return;
+    }
 
-    await call(
-      () => authService.updateMe(token, formData),
-      {
-        onSuccess: (data) => {
-          setProfile(data);
-          setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 3000);
-        },
-        onError: (message) => {
-          console.error('Failed to update profile:', message);
-        },
-      }
-    );
-
-    setIsSaving(false);
+    showLoading('Saving changes');
+    try {
+      await call(
+        () => authService.updateMe(token, formData),
+        {
+          onSuccess: (data) => {
+            setProfile(data);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+          },
+          onError: (message) => {
+            console.error('Failed to update profile:', message);
+          },
+        }
+      );
+    } finally {
+      hideLoading();
+      setIsSaving(false);
+    }
   };
 
   // Get initials for avatar

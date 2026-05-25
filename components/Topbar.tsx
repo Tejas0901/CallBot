@@ -3,7 +3,8 @@
 import { Bell, HelpCircle, Menu, User, Settings, LogOut } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
-import { useRouter } from "next/navigation";
+import { useLoading } from "@/context/loading-context";
+import { useRouter, usePathname } from "next/navigation";
 import { SearchBox } from "@/components/ui/search-box";
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
@@ -11,7 +12,15 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [searchText, setSearchText] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { logout, user } = useAuth();
+  const { showLoading, hideLoading } = useLoading();
+
+  const handleDropdownNav = (href: string) => {
+    setDropdownOpen(false);
+    if (!href || href === pathname) return;
+    showLoading();
+  };
 
   const displayName = user?.username || user?.email?.split("@")[0] || "";
   const initials = (() => {
@@ -39,11 +48,16 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     };
   }, []);
 
-  const handleDropdownLogout = () => {
-    logout();
-    router.push("/auth/login");
-    router.refresh();
-    setDropdownOpen(false); // Close dropdown after logout
+  const handleDropdownLogout = async () => {
+    setDropdownOpen(false);
+    showLoading("Signing out");
+    try {
+      await logout();
+      router.push("/auth/login");
+      router.refresh();
+    } finally {
+      hideLoading();
+    }
   };
 
   return (
@@ -107,6 +121,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                 )}
                 <a
                   href="/profile"
+                  onClick={() => handleDropdownNav("/profile")}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User className="w-4 h-4" />
@@ -114,6 +129,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </a>
                 <a
                   href="/settings"
+                  onClick={() => handleDropdownNav("/settings")}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <Settings className="w-4 h-4" />
@@ -121,6 +137,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </a>
                 <a
                   href="/settings/users"
+                  onClick={() => handleDropdownNav("/settings/users")}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User className="w-4 h-4" />
@@ -128,6 +145,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                 </a>
                 <a
                   href="/settings/users/create"
+                  onClick={() => handleDropdownNav("/settings/users/create")}
                   className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User className="w-4 h-4" />

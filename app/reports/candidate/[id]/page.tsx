@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download } from "lucide-react";
 import AiReportCard from "@/components/reports/AiReportCard";
 import { CandidateReportData } from "@/components/reports/ai-report-card/types";
+import { useLoading } from "@/context/loading-context";
 
 export default function CandidateReportPage() {
   const params = useParams();
@@ -20,9 +21,11 @@ export default function CandidateReportPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     const fetchReportData = async () => {
+      showLoading("Loading report");
       try {
         setLoading(true);
         setError(null);
@@ -61,13 +64,14 @@ export default function CandidateReportPage() {
         setReportData(generateMockReportData(reportId));
       } finally {
         setLoading(false);
+        hideLoading();
       }
     };
 
     if (reportId) {
       fetchReportData();
     }
-  }, [reportId]);
+  }, [reportId, showLoading, hideLoading]);
 
   // Fallback mock data function
   const generateMockReportData = (sessionId: string): CandidateReportData => {

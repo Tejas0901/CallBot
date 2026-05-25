@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
+import { useLoading } from '@/context/loading-context';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, loading: authLoading, error: authError, isLoggedIn } = useAuth();
+  const { showLoading, hideLoading } = useLoading();
 
   // Only honor in-app redirect targets to avoid open-redirect attacks.
   const rawRedirect = searchParams?.get('redirect') || '';
@@ -33,6 +35,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    showLoading('Signing in');
 
     try {
       await login(email, password);
@@ -41,6 +44,7 @@ export default function LoginPage() {
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
