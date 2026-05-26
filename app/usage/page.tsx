@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import PageHeader from "@/components/PageHeader";
 import MainLayout from "@/components/layouts/MainLayout";
 import { useBilling } from "@/hooks/useBilling";
 import { UsageRecord } from "@/types/billing";
-import { Phone, PhoneCall, Clock, IndianRupee } from "lucide-react";
+import {
+  Phone,
+  PhoneCall,
+  Clock,
+  IndianRupee,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,12 +21,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const PAGE_SIZE = 25;
 
 export default function UsagePage() {
   const { fetchUsageRecords, loading, error } = useBilling();
   const [usageRecords, setUsageRecords] = useState<UsageRecord[]>([]);
   const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const loadUsageRecords = async () => {
@@ -33,6 +44,20 @@ export default function UsagePage() {
 
     loadUsageRecords();
   }, [fetchUsageRecords]);
+
+  // Reset to first page whenever the underlying record list changes.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [usageRecords.length]);
+
+  const totalPages = Math.max(1, Math.ceil(usageRecords.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PAGE_SIZE, usageRecords.length);
+  const paginatedRecords = useMemo(
+    () => usageRecords.slice(startIndex, endIndex),
+    [usageRecords, startIndex, endIndex]
+  );
 
   // Calculate stats from all usage data
   const totalCalls = total ?? 0; // Use total count from API
@@ -150,6 +175,7 @@ export default function UsagePage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">S.No.</TableHead>
                   <TableHead>Call SID</TableHead>
                   <TableHead>Campaign ID</TableHead>
                   <TableHead>Duration</TableHead>
@@ -163,6 +189,9 @@ export default function UsagePage() {
                 {loading && (!usageRecords || usageRecords.length === 0) ? (
                   [...Array(5)].map((_, index) => (
                     <TableRow key={index}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-6" />
+                      </TableCell>
                       <TableCell>
                         <Skeleton className="h-4 w-32" />
                       </TableCell>
@@ -186,9 +215,12 @@ export default function UsagePage() {
                       </TableCell>
                     </TableRow>
                   ))
-                ) : usageRecords && usageRecords.length > 0 ? (
-                  usageRecords.map((record) => (
+                ) : paginatedRecords.length > 0 ? (
+                  paginatedRecords.map((record, idx) => (
                     <TableRow key={record.id}>
+                      <TableCell className="text-gray-500">
+                        {startIndex + idx + 1}
+                      </TableCell>
                       <TableCell className="font-mono text-xs">
                         {record.call_sid}
                       </TableCell>
@@ -209,7 +241,7 @@ export default function UsagePage() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="text-center text-gray-500 py-8"
                     >
                       No usage records found
@@ -220,10 +252,52 @@ export default function UsagePage() {
             </Table>
           </div>
 
-          {/* Show total count */}
-          {usageRecords && usageRecords.length > 0 && (
-            <div className="mt-4 text-sm text-gray-500">
-              Showing all {usageRecords.length} usage records
+          {/* Pagination */}
+          {usageRecords.length > 0 && (
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-gray-500">
+                Showing{" "}
+                <span className="font-medium text-gray-900">
+                  {startIndex + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium text-gray-900">{endIndex}</span> of{" "}
+                <span className="font-medium text-gray-900">
+                  {usageRecords.length}
+                </span>{" "}
+                records
+              </p>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage <= 1}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Previous
+                </Button>
+
+                <span className="px-3 text-sm text-gray-600">
+                  Page{" "}
+                  <span className="font-medium text-gray-900">{safePage}</span>{" "}
+                  of{" "}
+                  <span className="font-medium text-gray-900">{totalPages}</span>
+                </span>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={safePage >= totalPages}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
