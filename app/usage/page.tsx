@@ -176,7 +176,7 @@ export default function UsagePage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-16">S.No.</TableHead>
-                  <TableHead>Call SID</TableHead>
+                  <TableHead>Campaign Code</TableHead>
                   <TableHead>Campaign</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Billed</TableHead>
@@ -222,7 +222,7 @@ export default function UsagePage() {
                         {startIndex + idx + 1}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {record.call_sid}
+                        {record.campaign_code || "—"}
                       </TableCell>
                       <TableCell>
                         <div className="font-medium text-gray-900">
