@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useApiCall } from "@/hooks/useApiCall";
+import { useLoading } from "@/context/loading-context";
 import MainLayout from "@/components/layouts/MainLayout";
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
@@ -49,6 +50,7 @@ export default function UserManagement() {
   const router = useRouter();
   const { user: currentUser, getAccessToken } = useAuth();
   const { call, loading, error, clearError } = useApiCall();
+  const { showLoading, hideLoading, withLoading } = useLoading();
 
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -62,6 +64,7 @@ export default function UserManagement() {
       if (!token) return;
 
       setLoadingUsers(true);
+      showLoading("Loading users");
       try {
         const data = await authService.listUsers(token);
         setUsers(data.users || []);
@@ -69,11 +72,12 @@ export default function UserManagement() {
         console.error("Failed to load users:", err);
       } finally {
         setLoadingUsers(false);
+        hideLoading();
       }
     };
 
     loadUsers();
-  }, [token]);
+  }, [token, showLoading, hideLoading]);
 
   // Deactivate user
   const handleDeactivateUser = async (userId: string) => {
@@ -83,35 +87,47 @@ export default function UserManagement() {
 
     if (!token) return;
 
-    await call(() => authService.deactivateUser(token, userId), {
-      onSuccess: () => {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, is_active: false } : u))
-        );
-      },
-      onError: (message) => {
-        alert(`Failed to deactivate user: ${message}`);
-      },
-    });
+    await withLoading(
+      () =>
+        call(() => authService.deactivateUser(token, userId), {
+          onSuccess: () => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === userId ? { ...u, is_active: false } : u
+              )
+            );
+          },
+          onError: (message) => {
+            alert(`Failed to deactivate user: ${message}`);
+          },
+        }),
+      "Deactivating user"
+    );
   };
 
   // Toggle user active status
   const handleToggleActive = async (user: User) => {
     if (!token) return;
 
-    await call(
+    await withLoading(
       () =>
-        authService.updateUser(token, user.id, {
-          is_active: !user.is_active,
-        }),
-      {
-        onSuccess: (updated) => {
-          setUsers((prev) => prev.map((u) => (u.id === user.id ? updated : u)));
-        },
-        onError: (message) => {
-          alert(`Failed to update user: ${message}`);
-        },
-      }
+        call(
+          () =>
+            authService.updateUser(token, user.id, {
+              is_active: !user.is_active,
+            }),
+          {
+            onSuccess: (updated) => {
+              setUsers((prev) =>
+                prev.map((u) => (u.id === user.id ? updated : u))
+              );
+            },
+            onError: (message) => {
+              alert(`Failed to update user: ${message}`);
+            },
+          }
+        ),
+      user.is_active ? "Deactivating user" : "Activating user"
     );
   };
 
@@ -129,23 +145,27 @@ export default function UserManagement() {
   const handleUpdateRole = async () => {
     if (!editingUserRole || !token || !newRole) return;
 
-    await call(
+    await withLoading(
       () =>
-        authService.updateUser(token, editingUserRole.id, {
-          role: newRole,
-        }),
-      {
-        onSuccess: (updated) => {
-          setUsers((prev) =>
-            prev.map((u) => (u.id === editingUserRole.id ? updated : u))
-          );
-          setEditingUserRole(null);
-          setNewRole("");
-        },
-        onError: (message) => {
-          alert(`Failed to update user role: ${message}`);
-        },
-      }
+        call(
+          () =>
+            authService.updateUser(token, editingUserRole.id, {
+              role: newRole,
+            }),
+          {
+            onSuccess: (updated) => {
+              setUsers((prev) =>
+                prev.map((u) => (u.id === editingUserRole.id ? updated : u))
+              );
+              setEditingUserRole(null);
+              setNewRole("");
+            },
+            onError: (message) => {
+              alert(`Failed to update user role: ${message}`);
+            },
+          }
+        ),
+      "Updating role"
     );
   };
 

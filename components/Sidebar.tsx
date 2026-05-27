@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLoading } from "@/context/loading-context";
 import {
   LayoutDashboard,
   BarChart3,
@@ -40,8 +41,15 @@ const billingMenuItems = [
 
 export default function Sidebar({ isOpen }: { isOpen: boolean }) {
   const pathname = usePathname();
+  const { showLoading } = useLoading();
 
   const isActive = (href: string) => pathname === href;
+
+  const handleNavClick = (href: string) => {
+    // Skip placeholder hrefs and clicks on the current route.
+    if (!href || href === "#" || href === pathname) return;
+    showLoading();
+  };
 
   return (
     <aside
@@ -53,9 +61,9 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
         <div className="px-6 py-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">W</span>
+              <span className="text-white font-bold text-lg">C</span>
             </div>
-            <span className="text-lg font-semibold text-gray-900">WeCraft</span>
+            <span className="text-lg font-semibold text-gray-900">CallBot</span>
           </div>
         </div>
 
@@ -67,6 +75,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                 <Link
                   key={item.label}
                   href={item.href}
+                  onClick={() => handleNavClick(item.href)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.href)
                       ? "bg-gray-100 text-gray-900"
@@ -93,6 +102,7 @@ export default function Sidebar({ isOpen }: { isOpen: boolean }) {
                   <Link
                     key={item.label}
                     href={item.href}
+                    onClick={() => handleNavClick(item.href)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive(item.href)
                         ? "bg-gray-100 text-gray-900"

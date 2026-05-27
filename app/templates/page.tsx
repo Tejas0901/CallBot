@@ -9,6 +9,7 @@ import DeleteConfirmationDialogs from "@/components/templates/DeleteConfirmation
 import EmptyState from "@/components/templates/EmptyState";
 import { useTemplates } from "@/hooks/useTemplates";
 import { useQuestions } from "@/hooks/useQuestions";
+import { useLoading } from "@/context/loading-context";
 import { Template, NewTemplateForm } from "@/types/template";
 
 export default function TemplatesPage() {
@@ -50,10 +51,15 @@ export default function TemplatesPage() {
     clearQuestions,
   } = useQuestions();
 
+  const { withLoading } = useLoading();
+
   const handleSelectTemplate = async (template: Template) => {
     setSelectedTemplate(template.id);
     setTemplateName(template.name);
-    await loadQuestionsFromTemplate(template.id);
+    await withLoading(
+      () => loadQuestionsFromTemplate(template.id),
+      "Loading template"
+    );
   };
 
   const handleCreateTemplate = async (form: NewTemplateForm) => {
@@ -86,7 +92,10 @@ export default function TemplatesPage() {
       owner_id: form.owner_id,
     };
 
-    const createdTemplate = await createTemplate(payload);
+    const createdTemplate = await withLoading(
+      () => createTemplate(payload),
+      "Creating template"
+    );
     if (!createdTemplate) return;
 
     const newTemplate: Template = {
@@ -108,7 +117,10 @@ export default function TemplatesPage() {
   const handleDeleteTemplate = async () => {
     if (!selectedTemplate) return;
 
-    const success = await deleteTemplate(selectedTemplate);
+    const success = await withLoading(
+      () => deleteTemplate(selectedTemplate),
+      "Deleting template"
+    );
     if (!success) {
       setShowDeleteTemplateDialog(false);
       return;
@@ -131,10 +143,9 @@ export default function TemplatesPage() {
   const handleSaveTemplate = async () => {
     if (!selectedTemplate) return;
 
-    const success = await updateTemplateName(
-      selectedTemplate,
-      templateName,
-      questions
+    const success = await withLoading(
+      () => updateTemplateName(selectedTemplate, templateName, questions),
+      "Saving template"
     );
     if (success) {
       updateTemplateInList(selectedTemplate, templateName);

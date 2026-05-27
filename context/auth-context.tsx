@@ -1,8 +1,46 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import authService from '@/lib/authService';
 import tokenStorage, { StoredUser } from '@/lib/tokenStorage';
+
+const PUBLIC_PATHS = ['/', '/auth/login', '/auth/signup'];
+
+function isPublicPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return PUBLIC_PATHS.some(
+    (route) => pathname === route || pathname.startsWith(route + '/')
+  );
+}
+
+function setAuthCookies(accessToken: string, refreshToken: string) {
+  document.cookie = `callbot_access_token=${accessToken}; path=/; SameSite=Lax; Max-Age=3600`;
+  document.cookie = `callbot_refresh_token=${refreshToken}; path=/; SameSite=Lax; Max-Age=604800`;
+}
+
+function clearAuthCookies() {
+  document.cookie = 'callbot_access_token=; path=/; Max-Age=0';
+  document.cookie = 'callbot_refresh_token=; path=/; Max-Age=0';
+}
+
+function decodeExp(token: string): number | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+function isExpired(token: string | null, bufferSeconds = 0): boolean {
+  if (!token) return true;
+  const exp = decodeExp(token);
+  if (exp === null) return true;
+  return exp <= Math.floor(Date.now() / 1000) + bufferSeconds;
+}
 
 // Role constants
 export const ROLES = {
@@ -41,6 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Send the user to login, preserving the current path as a redirect target.
+  const redirectToLogin = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (isPublicPath(pathname)) return;
+    const target = `${window.location.pathname}${window.location.search}`;
+    const loginUrl = `/auth/login?redirect=${encodeURIComponent(target)}`;
+    router.replace(loginUrl);
+  }, [router, pathname]);
 
   // Login
   const login = useCallback(async (email: string, password: string): Promise<User> => {
@@ -49,11 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await authService.login(email, password);
       tokenStorage.save(data.access_token, data.refresh_token, data.user);
-      
-      // Also set token as cookie for middleware to read
-      document.cookie = `callbot_access_token=${data.access_token}; path=/; SameSite=Lax; Max-Age=3600`;
-      document.cookie = `callbot_refresh_token=${data.refresh_token}; path=/; SameSite=Lax; Max-Age=604800`;
-      
+      setAuthCookies(data.access_token, data.refresh_token);
       setUser(data.user as User);
       return data.user as User;
     } catch (err: any) {
@@ -76,9 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout error:', err);
     } finally {
       tokenStorage.clear();
-      // Clear cookies
-      document.cookie = 'callbot_access_token=; path=/; Max-Age=0';
-      document.cookie = 'callbot_refresh_token=; path=/; Max-Age=0';
+      clearAuthCookies();
       setUser(null);
       setError(null);
     }
@@ -89,19 +132,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshToken = tokenStorage.getRefreshToken();
     if (!refreshToken) {
       await logout();
+      redirectToLogin();
       return null;
     }
     try {
       const data = await authService.refreshToken(refreshToken);
       tokenStorage.save(data.access_token, data.refresh_token, data.user);
+      setAuthCookies(data.access_token, data.refresh_token);
       setUser(data.user as User);
       return data.access_token;
     } catch (err) {
       console.error('Token refresh failed:', err);
       await logout();
+      redirectToLogin();
       return null;
     }
-  }, [logout]);
+  }, [logout, redirectToLogin]);
 
   // Check if user has a minimum role
   const hasRole = useCallback((requiredRole: string): boolean => {
@@ -116,23 +162,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user?.role?.toLowerCase() === role?.toLowerCase();
   }, [user]);
 
-  // Restore session on mount
+  // Restore session on mount and validate token freshness.
   useEffect(() => {
-    const restoreSession = () => {
+    let cancelled = false;
+
+    const restoreSession = async () => {
       try {
+        const accessToken = tokenStorage.getAccessToken();
+        const refreshToken = tokenStorage.getRefreshToken();
         const savedUser = tokenStorage.getUser();
-        if (savedUser) {
-          setUser(savedUser as User);
+
+        // No session at all — make sure any stale cookie is gone so the
+        // middleware doesn't bounce us back, then redirect to login if needed.
+        if (!accessToken && !refreshToken) {
+          clearAuthCookies();
+          if (!isPublicPath(pathname)) redirectToLogin();
+          return;
         }
+
+        // Access token still valid — restore user and re-sync cookie for middleware.
+        if (accessToken && !isExpired(accessToken)) {
+          if (savedUser && !cancelled) setUser(savedUser as User);
+          if (refreshToken) setAuthCookies(accessToken, refreshToken);
+          return;
+        }
+
+        // Access token expired (or missing). Try refresh if we have a refresh token.
+        if (refreshToken) {
+          try {
+            const data = await authService.refreshToken(refreshToken);
+            if (cancelled) return;
+            tokenStorage.save(data.access_token, data.refresh_token, data.user);
+            setAuthCookies(data.access_token, data.refresh_token);
+            setUser(data.user as User);
+            return;
+          } catch (err) {
+            console.error('Session refresh failed:', err);
+          }
+        }
+
+        // Refresh failed or unavailable — clear and redirect.
+        tokenStorage.clear();
+        clearAuthCookies();
+        if (!cancelled) setUser(null);
+        redirectToLogin();
       } catch (err) {
         console.error('Error restoring session:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     restoreSession();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+    // We intentionally re-run on route change so a navigation to a protected
+    // page after token expiry triggers the redirect.
+  }, [pathname, redirectToLogin]);
+
+  // Proactive expiry watcher: if the access token expires while the tab is
+  // open, try a refresh; on failure, kick the user to login.
+  useEffect(() => {
+    if (!user) return;
+    const token = tokenStorage.getAccessToken();
+    const exp = token ? decodeExp(token) : null;
+    if (!exp) return;
+
+    const msUntilExpiry = exp * 1000 - Date.now();
+    // Try to refresh 30s before expiry; if already past, run immediately.
+    const delay = Math.max(0, msUntilExpiry - 30_000);
+
+    const timer = setTimeout(() => {
+      refresh();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [user, refresh]);
 
   const value: AuthContextType = {
     user,

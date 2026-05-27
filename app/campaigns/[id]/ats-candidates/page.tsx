@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SearchBox } from "@/components/ui/search-box";
 import { fetchAtsCandidatesShared } from "@/lib/ats-candidates";
 import { filterJobsByCode } from "@/lib/api-integrations";
+import { useLoading } from "@/context/loading-context";
 
 interface Campaign {
   id: string;
@@ -41,6 +42,7 @@ export default function CampaignAtsCandidatesPage() {
   const [importError, setImportError] = useState("");
   const TENANT_ID =
     process.env.NEXT_PUBLIC_TENANT_ID || "550e8400-e29b-41d4-a716-446655440000";
+  const { showLoading, hideLoading } = useLoading();
 
   // Get auth tokens
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function CampaignAtsCandidatesPage() {
       if (!authToken) return;
 
       setLoading(true);
+      showLoading("Loading candidates");
       try {
         const response = await fetch(`/api/campaigns/${campaignId}`, {
           headers: {
@@ -79,11 +82,12 @@ export default function CampaignAtsCandidatesPage() {
         setCampaign(null);
       } finally {
         setLoading(false);
+        hideLoading();
       }
     };
 
     fetchCampaign();
-  }, [campaignId, authToken]);
+  }, [campaignId, authToken, showLoading, hideLoading]);
 
   // Fetch job_id from job_code
   useEffect(() => {
@@ -212,6 +216,7 @@ export default function CampaignAtsCandidatesPage() {
       return;
     }
 
+    showLoading("Importing candidates");
     try {
       // Prepare contacts data from tag-candidates response format
       const contactsPayload = selected.map((candidate) => {
@@ -289,6 +294,7 @@ export default function CampaignAtsCandidatesPage() {
       );
     } finally {
       setImportLoading(false);
+      hideLoading();
     }
   };
 

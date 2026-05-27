@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLoading } from "@/context/loading-context";
 import {
   LineChart,
   Line,
@@ -74,9 +75,11 @@ export default function Analytics() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      showLoading("Loading analytics");
       try {
         setLoading(true);
         setError(null);
@@ -88,19 +91,19 @@ export default function Analytics() {
         setError("Failed to load analytics data. Showing sample data.");
       } finally {
         setLoading(false);
+        hideLoading();
       }
     };
 
     fetchAnalytics();
-  }, []);
+  }, [showLoading, hideLoading]);
 
   if (loading) {
+    // Global loader is already on screen via LoadingProvider while the fetch
+    // is in flight — render nothing inside MainLayout to avoid flicker.
     return (
       <MainLayout>
         <PageHeader title="Analytics" />
-        <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Loading analytics data...</div>
-        </div>
       </MainLayout>
     );
   }

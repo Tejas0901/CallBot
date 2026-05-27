@@ -156,9 +156,17 @@ class ApiClient {
       this.refreshQueue.forEach(({ reject }) => reject(error as Error));
       this.refreshQueue = [];
 
-      // Force redirect to login (client-side only)
+      // Force redirect to login (client-side only), preserving where we were.
       if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login';
+        // Clear cookies so middleware doesn't bounce us back.
+        document.cookie = 'callbot_access_token=; path=/; Max-Age=0';
+        document.cookie = 'callbot_refresh_token=; path=/; Max-Age=0';
+        const current = `${window.location.pathname}${window.location.search}`;
+        const isOnAuthPage = window.location.pathname.startsWith('/auth/');
+        const loginUrl = isOnAuthPage
+          ? '/auth/login'
+          : `/auth/login?redirect=${encodeURIComponent(current)}`;
+        window.location.href = loginUrl;
       }
 
       throw error;

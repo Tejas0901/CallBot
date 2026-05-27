@@ -16,7 +16,8 @@
       "Bash(npm install:*)",
       "Bash(npx next:*)",
       "Bash(npm dedupe:*)",
-      "Bash(echo $NODE_ENV)"
+      "Bash(echo $NODE_ENV)",
+      "Bash(git rm *)"
     ]
   }
 }

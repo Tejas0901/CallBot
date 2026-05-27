@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
+import { useLoading } from '@/context/loading-context';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,25 +16,35 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, loading: authLoading, error: authError, isLoggedIn } = useAuth();
+  const { showLoading, hideLoading } = useLoading();
+
+  // Only honor in-app redirect targets to avoid open-redirect attacks.
+  const rawRedirect = searchParams?.get('redirect') || '';
+  const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+    ? rawRedirect
+    : '/dashboard';
 
   useEffect(() => {
     if (isLoggedIn && !authLoading) {
-      router.push('/dashboard');
+      router.push(redirectTo);
     }
-  }, [isLoggedIn, authLoading, router]);
+  }, [isLoggedIn, authLoading, router, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    showLoading('Signing in');
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      router.push(redirectTo);
     } catch (error: any) {
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
@@ -42,9 +53,9 @@ export default function LoginPage() {
       {/* Mobile logo */}
       <div className="flex items-center gap-3 mb-8 lg:hidden">
         <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">W</span>
+          <span className="text-white font-bold text-lg">C</span>
         </div>
-        <span className="text-xl font-bold text-gray-900">WeCraft</span>
+        <span className="text-xl font-bold text-gray-900">CallBot</span>
       </div>
 
       {/* Header */}

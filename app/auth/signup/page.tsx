@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth-context';
+import { useLoading } from '@/context/loading-context';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -20,6 +21,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { signup } = useAuth();
+  const { showLoading, hideLoading } = useLoading();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +40,7 @@ export default function SignupPage() {
       return;
     }
 
+    showLoading('Creating your account');
     try {
       await signup(name, email, password);
       router.push('/dashboard');
@@ -45,6 +48,7 @@ export default function SignupPage() {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
@@ -55,16 +59,16 @@ export default function SignupPage() {
       {/* Mobile logo */}
       <div className="flex items-center gap-3 mb-8 lg:hidden">
         <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-lg">W</span>
+          <span className="text-white font-bold text-lg">C</span>
         </div>
-        <span className="text-xl font-bold text-gray-900">WeCraft</span>
+        <span className="text-xl font-bold text-gray-900">CallBot</span>
       </div>
 
       {/* Header */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
         <p className="mt-2 text-sm text-gray-500">
-          Get started with WeCraft in just a few steps
+          Get started with CallBot in just a few steps
         </p>
       </div>
 

@@ -22,12 +22,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useApiCall } from "@/hooks/useApiCall";
+import { useLoading } from "@/context/loading-context";
 import MainLayout from "@/components/layouts/MainLayout";
 
 export default function CreateUserPage() {
   const router = useRouter();
   const { user: currentUser, getAccessToken } = useAuth();
   const { call, loading, error, clearError } = useApiCall();
+  const { withLoading } = useLoading();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -43,19 +45,23 @@ export default function CreateUserPage() {
 
     if (!token) return;
 
-    const result = await call(() => authService.createUser(token, formData), {
-      onSuccess: (newUser) => {
-        // Show success notification
-        alert(
-          `User ${newUser.username || newUser.email} created successfully!`
-        );
-        // Redirect back to user management page
-        router.push("/settings/users");
-      },
-      onError: (message) => {
-        console.error("Failed to create user:", message);
-      },
-    });
+    const result = await withLoading(
+      () =>
+        call(() => authService.createUser(token, formData), {
+          onSuccess: (newUser) => {
+            // Show success notification
+            alert(
+              `User ${newUser.username || newUser.email} created successfully!`
+            );
+            // Redirect back to user management page
+            router.push("/settings/users");
+          },
+          onError: (message) => {
+            console.error("Failed to create user:", message);
+          },
+        }),
+      "Creating user"
+    );
 
     if (!result) {
       console.error("Failed to create user:", error || "Unknown error");

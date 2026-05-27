@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useLoading } from "@/context/loading-context";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { Plus } from "lucide-react";
 export default function DraftsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { showLoading } = useLoading();
 
   if (authLoading) {
     return (
@@ -24,7 +26,7 @@ export default function DraftsPage() {
   }
 
   const handleCreateCampaign = () => {
-    // Redirect to create campaign modal or page
+    showLoading();
     router.push("/campaigns");
   };
 
