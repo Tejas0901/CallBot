@@ -177,7 +177,7 @@ export default function UsagePage() {
                 <TableRow>
                   <TableHead className="w-16">S.No.</TableHead>
                   <TableHead>Call SID</TableHead>
-                  <TableHead>Campaign ID</TableHead>
+                  <TableHead>Campaign</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Billed</TableHead>
                   <TableHead>Rate</TableHead>
@@ -224,8 +224,15 @@ export default function UsagePage() {
                       <TableCell className="font-mono text-xs">
                         {record.call_sid}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {record.campaign_id?.substring(0, 8)}...
+                      <TableCell>
+                        <div className="font-medium text-gray-900">
+                          {record.campaign_name || "—"}
+                        </div>
+                        {record.created_by && (
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {record.created_by}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {formatDuration(record.duration_seconds)}
