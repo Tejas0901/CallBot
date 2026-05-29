@@ -39,6 +39,7 @@ export interface UsageRecord {
   id: string;
   call_sid: string;
   campaign_id: string | null;
+  campaign_code: string | null;
   campaign_name: string | null;
   created_by: string | null;
   session_id: string | null;
