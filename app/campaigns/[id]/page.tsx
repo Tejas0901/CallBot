@@ -1782,6 +1782,7 @@ export default function CampaignDetailPage() {
                         setCandidates={setCandidates}
                         routePrefix="campaigns"
                         entityType="campaign"
+                        onImportSuccess={() => refetchContacts()}
                       />
                       <Button
                         onClick={() => setShowScriptsDialog(true)}

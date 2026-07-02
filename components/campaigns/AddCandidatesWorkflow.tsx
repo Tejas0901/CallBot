@@ -22,6 +22,7 @@ interface AddCandidatesWorkflowProps {
   setCandidates: React.Dispatch<React.SetStateAction<CandidateRow[]>>;
   routePrefix: "drafts" | "campaigns"; // For navigation paths
   entityType?: "draft" | "campaign"; // For dialog labels
+  onImportSuccess?: () => void; // Called after a successful CSV import to refresh the table
 }
 
 export default function AddCandidatesWorkflow({
@@ -32,6 +33,7 @@ export default function AddCandidatesWorkflow({
   setCandidates,
   routePrefix,
   entityType = "draft",
+  onImportSuccess,
 }: AddCandidatesWorkflowProps) {
   const router = useRouter();
 
@@ -56,7 +58,7 @@ export default function AddCandidatesWorkflow({
   const singleInputRef = useRef<HTMLInputElement | null>(null);
   const bulkInputRef = useRef<HTMLInputElement | null>(null);
 
-  const acceptedExt = [".pdf", ".doc", ".docx", ".csv", ".xlsx", ".xls"];
+  const acceptedExt = [".pdf", ".doc", ".docx", ".csv"];
   const isAccepted = (file: File) =>
     acceptedExt.some((ext) => file.name.toLowerCase().endsWith(ext));
 
@@ -112,18 +114,13 @@ export default function AddCandidatesWorkflow({
     setImportError("");
 
     try {
-      // Filter for spreadsheet/CSV files only
-      const csvExcelFiles = manualResumes.filter((file) => {
-        const ext = file.name.toLowerCase();
-        return (
-          ext.endsWith(".csv") || ext.endsWith(".xlsx") || ext.endsWith(".xls")
-        );
-      });
+      // Filter for CSV files only (the backend import endpoint accepts CSV only).
+      const csvExcelFiles = manualResumes.filter((file) =>
+        file.name.toLowerCase().endsWith(".csv"),
+      );
 
       if (csvExcelFiles.length === 0) {
-        setImportError(
-          "Please select at least one CSV or Excel file to import",
-        );
+        setImportError("Please select at least one CSV file to import");
         setImportLoading(false);
         return;
       }
@@ -204,6 +201,8 @@ export default function AddCandidatesWorkflow({
         alert(
           `Import successful! ${result.data?.imported || 0} candidates imported, ${result.data?.skipped || 0} skipped.`,
         );
+        // Refresh the candidates table so newly imported rows show without a manual reload.
+        onImportSuccess?.();
       } else {
         throw new Error(result.message || "Import failed");
       }
@@ -442,7 +441,7 @@ export default function AddCandidatesWorkflow({
           <DialogHeader>
             <DialogTitle>Upload a single resume or file</DialogTitle>
             <DialogDescription>
-              Accepted: .pdf, .doc, .docx, .csv, .xlsx, .xls
+              Accepted: .pdf, .doc, .docx, .csv
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -450,12 +449,12 @@ export default function AddCandidatesWorkflow({
               ref={singleInputRef}
               type="file"
               className="hidden"
-              accept=".pdf,.doc,.docx,.csv,.xlsx,.xls,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".pdf,.doc,.docx,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv"
               onChange={(e) => {
                 setUploadError("");
                 const f = e.target.files?.[0] ?? null;
                 if (f && !isAccepted(f)) {
-                  setUploadError("Only .pdf, .doc, .docx are allowed.");
+                  setUploadError("Only .pdf, .doc, .docx, .csv are allowed.");
                   setSingleFile(null);
                   return;
                 }
@@ -477,7 +476,7 @@ export default function AddCandidatesWorkflow({
                 const file = e.dataTransfer.files?.[0];
                 if (!file) return;
                 if (!isAccepted(file)) {
-                  setUploadError("Only .pdf, .doc, .docx are allowed.");
+                  setUploadError("Only .pdf, .doc, .docx, .csv are allowed.");
                   return;
                 }
                 setSingleFile(file);
@@ -492,7 +491,7 @@ export default function AddCandidatesWorkflow({
                   drop
                 </p>
                 <p className="text-xs text-gray-500">
-                  PDF, DOC, DOCX, CSV, XLSX, XLS
+                  PDF, DOC, DOCX, CSV
                 </p>
                 <div className="mt-2">
                   <Button
@@ -563,7 +562,7 @@ export default function AddCandidatesWorkflow({
           <DialogHeader>
             <DialogTitle>Bulk upload resumes and files</DialogTitle>
             <DialogDescription>
-              Upload up to 50 files (.pdf, .doc, .docx, .csv, .xlsx, .xls)
+              Upload up to 50 files (.pdf, .doc, .docx, .csv)
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -572,7 +571,7 @@ export default function AddCandidatesWorkflow({
               type="file"
               multiple
               className="hidden"
-              accept=".pdf,.doc,.docx,.csv,.xlsx,.xls,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".pdf,.doc,.docx,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv"
               onChange={(e) => {
                 setUploadError("");
                 const files = Array.from(e.target.files ?? []).filter(
@@ -616,7 +615,7 @@ export default function AddCandidatesWorkflow({
                   drop
                 </p>
                 <p className="text-xs text-gray-500">
-                  PDF, DOC, DOCX, CSV, XLSX, XLS • Up to 50 files
+                  PDF, DOC, DOCX, CSV • Up to 50 files
                 </p>
                 <div className="mt-2">
                   <Button
