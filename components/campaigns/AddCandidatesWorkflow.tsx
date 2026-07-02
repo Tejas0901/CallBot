@@ -143,6 +143,19 @@ export default function AddCandidatesWorkflow({
         return;
       }
 
+      // Contacts API is authenticated with the callbot access token (same as
+      // campaign creation), NOT the Hyrex token used for ATS/job codes.
+      const accessToken =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("callbot_access_token")
+          : null;
+
+      if (!accessToken) {
+        setImportError("You are not signed in. Please log in again.");
+        setImportLoading(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("file", fileToImport, fileToImport.name);
 
@@ -158,6 +171,7 @@ export default function AddCandidatesWorkflow({
           method: "POST",
           headers: {
             "tenant-id": TENANT_ID,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: formData,
         },
