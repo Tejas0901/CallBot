@@ -17,7 +17,8 @@
       "Bash(npx next:*)",
       "Bash(npm dedupe:*)",
       "Bash(echo $NODE_ENV)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Read(//c/Users/TEJAS NIGAM/AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm/LocalState/sessions/2F1C84709D77A1EA5C935DAB7ADC3CC3A8E5E03E/transfers/2026-27/**)"
     ]
   }
 }
