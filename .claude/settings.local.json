@@ -18,7 +18,8 @@
       "Bash(npm dedupe:*)",
       "Bash(echo $NODE_ENV)",
       "Bash(git rm *)",
-      "Read(//c/Users/TEJAS NIGAM/AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm/LocalState/sessions/2F1C84709D77A1EA5C935DAB7ADC3CC3A8E5E03E/transfers/2026-27/**)"
+      "Read(//c/Users/TEJAS NIGAM/AppData/Local/Packages/5319275A.WhatsAppDesktop_cv1g1gvanyjgm/LocalState/sessions/2F1C84709D77A1EA5C935DAB7ADC3CC3A8E5E03E/transfers/2026-27/**)",
+      "PowerShell($out = npx tsc --noEmit; $mine = $out | Select-String -Pattern 'dashboard|monitoring'; $total = $out | Select-String -Pattern ': error TS'; Write-Output \"Errors in my files: $\\($mine.Count\\)\"; Write-Output \"Total errors in repo: $\\($total.Count\\)\"; if \\($mine.Count -gt 0\\) { $mine })"
     ]
   }
 }
