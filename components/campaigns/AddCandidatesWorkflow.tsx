@@ -498,7 +498,12 @@ export default function AddCandidatesWorkflow({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => singleInputRef.current?.click()}
+                    onClick={(e) => {
+                      // Stop the click from bubbling to the drop zone's onClick,
+                      // which would open the file picker a second time.
+                      e.stopPropagation();
+                      singleInputRef.current?.click();
+                    }}
                   >
                     Choose file
                   </Button>
@@ -622,7 +627,12 @@ export default function AddCandidatesWorkflow({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => bulkInputRef.current?.click()}
+                    onClick={(e) => {
+                      // Stop the click from bubbling to the drop zone's onClick,
+                      // which would open the file picker a second time.
+                      e.stopPropagation();
+                      bulkInputRef.current?.click();
+                    }}
                   >
                     Choose files
                   </Button>
